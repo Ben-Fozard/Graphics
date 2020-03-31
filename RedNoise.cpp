@@ -17,6 +17,8 @@ void update();
 void handleEvent(SDL_Event event);
 std::vector<float> interpolate(float from, float to, int numberOfValues);
 std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues);
+void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour);
+void stroked(CanvasTriangle points, Colour colour);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
@@ -37,41 +39,41 @@ int main(int argc, char* argv[])
 void draw()
 {
   window.clearPixels();
-  //TOP LEFT, RED, 255,0,0
-  //TOP RIGHT, BLUE, 0,0,255
-  //BOTTOM LEFT, YELLOW, 255, 255, 0
-  //BOTTOM RIGHT, GREEN, 0,255,0
-  //
-  //
-  //
 
+  //Lab 2 DRAW LINE
+  /*
+  Colour drawColour = Colour(255, 0, 0);
+  CanvasPoint start = CanvasPoint(10.f, 10.f);
+  CanvasPoint end = CanvasPoint(100.f, 80.f);
+  drawLine(start, end, drawColour);
+  */
+
+  //Lab 2 DRAW TRIANGLE
+  Colour drawColour = Colour(255, 0, 0);
+  CanvasPoint cp1 = CanvasPoint(50.f, 10.f);
+  CanvasPoint cp2 = CanvasPoint(20.f, 120.f);
+  CanvasPoint cp3 = CanvasPoint(80.f, 70.f);
+  CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
+  stroked(points, drawColour);
+
+  //Lab 1 COLOUR GRADIENT
+  /*
   std::vector<vec3> right = newInterpolate(vec3(0,255,0), vec3(0,0,255), window.height);
   std::vector<vec3> left = newInterpolate(vec3(255,255,0), vec3(255,0,0), window.height);
 
   for(int y=0; y<window.height ;y++) {
-
-    // std::vector<float> redi = interpolate(0, 255, window.width);
-    // std::vector<float> greeni = interpolate(0, 255, window.width);
-    // std::vector<float> bluei = interpolate(0, 255, window.width);
     vec3 lefti = left.back();
     left.pop_back();
     vec3 righti = right.back();
     right.pop_back();
-
     std::vector<vec3> pixel = newInterpolate(righti, lefti, window.width);
-
     for(int x=0; x<window.width ;x++) {
-      // float red = rand() % 255;
-      // float green = 0.0;
-      // float blue = 0.0;
       uint32_t colour = (255<<24) + (int(pixel.back().x)<<16) + (int(pixel.back().y)<<8) + int(pixel.back().z);
       pixel.pop_back();
-      // redi.pop_back();
-      // greeni.pop_back();
-      // bluei.pop_back();
       window.setPixelColour(x, y, colour);
     }
   }
+  */
 }
 
 void update()
@@ -115,4 +117,29 @@ std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues) {
   }
 
   return results;
+}
+
+void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
+  int xlen = point1.x - point2.x;
+  int ylen = point1.y - point2.y;
+  int len = sqrt((xlen * xlen) + (ylen * ylen));
+
+  std::vector<float> xsteps = interpolate(point1.x, point2.x, len);
+  std::vector<float> ysteps = interpolate(point1.y, point2.y, len);
+
+  for (int i = 0; i < len; i++) {
+    int x = xsteps.back();
+    xsteps.pop_back();
+    int y = ysteps.back();
+    ysteps.pop_back();
+
+    uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
+    window.setPixelColour(x, y, colour32);
+  }
+}
+
+void stroked(CanvasTriangle points, Colour colour) {
+  drawLine(points.vertices[0], points.vertices[1], colour);
+  drawLine(points.vertices[1], points.vertices[2], colour);
+  drawLine(points.vertices[0], points.vertices[2], colour);
 }
