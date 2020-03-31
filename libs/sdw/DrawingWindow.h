@@ -1,4 +1,4 @@
-#include "/mnt/c/Users/benfo/downloads/SDL2-2.0.10/SDL2-2.0.10/include/SDL.h"
+#include "SDL.h"
 #include <iostream>
 
 class DrawingWindow
