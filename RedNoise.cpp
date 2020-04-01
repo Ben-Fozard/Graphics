@@ -19,6 +19,10 @@ std::vector<float> interpolate(float from, float to, int numberOfValues);
 std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues);
 void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour);
 void stroked(CanvasTriangle points, Colour colour);
+void filledTriangle(CanvasTriangle points, Colour colour);
+void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
+void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
+
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
@@ -49,12 +53,22 @@ void draw()
   */
 
   //Lab 2 DRAW TRIANGLE
+  /*
   Colour drawColour = Colour(255, 0, 0);
   CanvasPoint cp1 = CanvasPoint(50.f, 10.f);
   CanvasPoint cp2 = CanvasPoint(20.f, 120.f);
   CanvasPoint cp3 = CanvasPoint(80.f, 70.f);
   CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
   stroked(points, drawColour);
+  */
+
+  //Lab 2 DRAW FILLED TRIANGLE
+  Colour drawColour = Colour(255, 0, 0);
+  CanvasPoint cp1 = CanvasPoint(50.f, 10.f);
+  CanvasPoint cp2 = CanvasPoint(20.f, 120.f);
+  CanvasPoint cp3 = CanvasPoint(80.f, 70.f);
+  CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
+  filledTriangle(points, drawColour);
 
   //Lab 1 COLOUR GRADIENT
   /*
@@ -142,4 +156,79 @@ void stroked(CanvasTriangle points, Colour colour) {
   drawLine(points.vertices[0], points.vertices[1], colour);
   drawLine(points.vertices[1], points.vertices[2], colour);
   drawLine(points.vertices[0], points.vertices[2], colour);
+}
+
+void filledTriangle(CanvasTriangle points, Colour colour) {
+  //First sort the veritces according to y value ASCENDING
+  if (points.vertices[0].y > points.vertices[1].y) {
+    swap(points.vertices[0], points.vertices[1]);
+  }
+  if (points.vertices[1].y > points.vertices[2].y) {
+    swap(points.vertices[1], points.vertices[2]);
+  }
+  if (points.vertices[0].y > points.vertices[1].y) {
+    swap(points.vertices[0], points.vertices[1]);
+  }
+
+  CanvasPoint top = points.vertices[0];
+  CanvasPoint mid = points.vertices[1];
+  CanvasPoint btm = points.vertices[2];
+
+  //Split the triangle into two with flat bases
+  CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y);
+
+  //Then fill these two triangles that are produced
+  fillBottomFlatTriangle(top, mid, midpoint, colour);
+  fillTopFlatTriangle(mid, midpoint, btm, colour);
+
+}
+
+void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
+  float invslope1 = (point2.x - point1.x) / (point2.y - point1.y);
+  float invslope2 = (point3.x - point1.x) / (point3.y - point1.y);
+
+  float curx1 = point1.x;
+  float curx2 = point1.x;
+
+  for (int scanlineY = point1.y; scanlineY <= point2.y; scanlineY++) {
+    CanvasPoint start = CanvasPoint(curx1, scanlineY);
+    CanvasPoint end = CanvasPoint(curx2, scanlineY);
+    drawLine(start, end, colour);
+    curx1 += invslope1;
+    curx2 += invslope2;
+  }
+
+//ATTEMPT TO DO IT USING OUR INTERPOLATION FUNCTION
+
+  // std::vector<float> invslope1 = interpolate(point1.x, point2.x, point2.y - point1.y);
+  // std::vector<float> invslope2 = interpolate(point1.x, point3.x, point3.y - point1.y);
+  //
+  // for (int y = point1.y; y < point2.y; y++) {
+  //   float xstart = invslope1.back();
+  //   invslope1.pop_back();
+  //   float xend = invslope2.back();
+  //   invslope2.pop_back();
+  //
+  //   CanvasPoint start = CanvasPoint(xstart, y);
+  //   CanvasPoint end = CanvasPoint(xend, y);
+  //
+  //   drawLine(start, end, colour);
+  // }
+
+}
+
+void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
+  float invslope1 = (point3.x - point1.x) / (point3.y - point1.y);
+  float invslope2 = (point3.x - point2.x) / (point3.y - point2.y);
+
+  float curx1 = point3.x;
+  float curx2 = point3.x;
+
+  for (int scanlineY = point3.y; scanlineY > point1.y; scanlineY--) {
+    CanvasPoint start = CanvasPoint(curx1, scanlineY);
+    CanvasPoint end = CanvasPoint(curx2, scanlineY);
+    drawLine(start, end, colour);
+    curx1 -= invslope1;
+    curx2 -= invslope2;
+  }
 }
