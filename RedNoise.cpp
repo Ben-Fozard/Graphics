@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 }
 
 void readImage() {
-  std::ifstream ifs ("test.ppm", std::ifstream::in);
+  std::ifstream ifs ("texture.ppm", std::ifstream::in);
   string line;
 
   //FILE TYPE
@@ -70,6 +70,10 @@ void readImage() {
   int width = stoi(widthS);
   int height = stoi(heightS);
 
+  printf("WIDTH: %d   ", width);
+  printf("HEIGHT: %d\n", height);
+
+
   //OTHER HEADER INFO
   getline(ifs, line);
   string maxVal = line;
@@ -81,18 +85,26 @@ void readImage() {
   for (int i = 0; i < height; i++) { //FOR EACH ROW
     for (int j = 0; j < width; j++) { //FOR EACH PIXEL
       //READ IN THE COLOURS FOR THE PIXEL
-      getline(ifs, line);
-      int red = stoi(line);
-      getline(ifs, line);
-      int green = stoi(line);
-      getline(ifs, line);
-      int blue = stoi(line);
+      char red;
+      ifs.read((char*)&red, 1);
 
-      //DRAW TO WINDOW
-      uint32_t colour32 = (255<<24) + (red<<16) + (green<<8) + blue;
+      char green;
+      ifs.read((char*)&green, 1);
+
+      char blue;
+      ifs.read((char*)&blue, 1);
+
+      Colour colour = Colour(red, green, blue);
+
+      //SET THE PIXEL COLOUR
+      uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
       window.setPixelColour(j, i, colour32);
+
+
     }
   }
+
+  printf("Finished reading in file\n");
 
 
 }
