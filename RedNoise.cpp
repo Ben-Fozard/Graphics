@@ -12,6 +12,7 @@ using namespace glm;
 #define WIDTH 320
 #define HEIGHT 240
 
+void readImage();
 void draw();
 void update();
 void handleEvent(SDL_Event event);
@@ -24,20 +25,76 @@ void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint 
 void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
 
 
-DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
+DrawingWindow window;// = DrawingWindow(WIDTH, HEIGHT, false);
 
 int main(int argc, char* argv[])
 {
+  readImage();
+
   SDL_Event event;
+  // window = DrawingWindow(WIDTH, HEIGHT, false);
   while(true)
   {
     // We MUST poll for events - otherwise the window will freeze !
     if(window.pollForInputEvents(&event)) handleEvent(event);
     update();
-    draw();
+    // draw();
     // Need to render the frame at the end, or nothing actually gets shown on the screen !
     window.renderFrame();
   }
+
+}
+
+void readImage() {
+  std::ifstream ifs ("test.ppm", std::ifstream::in);
+  string line;
+
+  //FILE TYPE
+  getline(ifs, line);
+  puts(line.c_str());
+
+  //MOVE PAST WHITESPACE
+  getline(ifs, line);
+
+  //GET DIMENSIONS
+  getline(ifs, line);
+  string gap = " ";
+  size_t found = line.find(gap);
+
+  string widthS = line.substr(0, found);
+  puts(widthS.c_str());
+
+  string heightS = line.substr(found+1);
+  puts(heightS.c_str());
+
+  int width = stoi(widthS);
+  int height = stoi(heightS);
+
+  //OTHER HEADER INFO
+  getline(ifs, line);
+  string maxVal = line;
+  puts(maxVal.c_str());
+
+  //USE THIS TO DRAW THE WINDOW
+  window = DrawingWindow(width, height, false);
+
+  for (int i = 0; i < height; i++) { //FOR EACH ROW
+    for (int j = 0; j < width; j++) { //FOR EACH PIXEL
+      //READ IN THE COLOURS FOR THE PIXEL
+      getline(ifs, line);
+      int red = stoi(line);
+      getline(ifs, line);
+      int green = stoi(line);
+      getline(ifs, line);
+      int blue = stoi(line);
+
+      //DRAW TO WINDOW
+      uint32_t colour32 = (255<<24) + (red<<16) + (green<<8) + blue;
+      window.setPixelColour(j, i, colour32);
+    }
+  }
+
+
 }
 
 void draw()
