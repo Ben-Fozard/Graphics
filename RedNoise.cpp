@@ -25,9 +25,9 @@ void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint 
 void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
 
 //For textures
-void drawLineTex(CanvasPoint point1, CanvasPoint point2, Colour colour);
+void drawLineTex(CanvasPoint point1, CanvasPoint point2);
 void filledTriangleTex(CanvasTriangle points, Colour colour);
-void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
+void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, CanvasPoint btm, Colour colour);
 void fillTopFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
 
 
@@ -177,12 +177,12 @@ void draw()
   CanvasPoint cp1 = CanvasPoint(160.f, 10.f);
   CanvasPoint cp2 = CanvasPoint(300.f, 230.f);
   CanvasPoint cp3 = CanvasPoint(10.f, 150.f);
-  CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
-  stroked(points, drawColour);
   //Associate each point with a texture point
   cp1.texturePoint = TexturePoint(195, 5);
   cp2.texturePoint = TexturePoint(395, 380);
   cp3.texturePoint = TexturePoint(65, 330);
+  CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
+  stroked(points, drawColour);
   //Now fill the triangle
   filledTriangleTex(points, drawColour);
 
@@ -206,6 +206,11 @@ void handleEvent(SDL_Event event)
 
 std::vector<float> interpolate(float from, float to, int numberOfValues) {
   std::vector<float> results = {};
+
+  if (numberOfValues == 1) {
+    results.push_back(from);
+    return results;
+  }
 
   float step = (to - from)/(numberOfValues - 1);
 
@@ -283,25 +288,41 @@ void filledTriangle(CanvasTriangle points, Colour colour) {
 
 void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
   //TOP, MID, MIDPOINT
-  //Draw from top to each point along the base
-  for (int curX = point2.x; curX <= point3.x; curX++) {
-    CanvasPoint end = CanvasPoint(curX, point2.y);
-    drawLine(point1, end, colour);
+  std::vector<float> startXs = interpolate(point2.x, point1.x, point2.y - point1.y);
+  std::vector<float> endXs = interpolate(point3.x, point1.x, point3.y - point1.y);
+
+  for (float y = point1.y; y < point2.y; y+=1.0) {
+    float xStart = startXs.back();
+    startXs.pop_back();
+    float xEnd = endXs.back();
+    endXs.pop_back();
+
+    CanvasPoint start = CanvasPoint(xStart, y);
+    CanvasPoint end = CanvasPoint(xEnd, y);
+    drawLine(start, end, colour);
   }
-
-
 }
 
 void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
   //MID, MIDPOINT, BTM
-  //Draw from bottom to each point along the flat top
-  for (int curX = point1.x; curX <= point2.x; curX++) {
-    CanvasPoint end = CanvasPoint(curX, point2.y);
-    drawLine(point3, end, colour);
+  std::vector<float> startXs = interpolate(point3.x, point1.x, point3.y - point1.y);
+  std::vector<float> endXs = interpolate(point3.x, point2.x, point3.y - point1.y);
+
+  for (float y = point1.y; y < point3.y; y+=1.0) {
+    float xStart = startXs.back();
+    startXs.pop_back();
+    float xEnd = endXs.back();
+    endXs.pop_back();
+
+    CanvasPoint start = CanvasPoint(xStart, y);
+    CanvasPoint end = CanvasPoint(xEnd, y);
+    drawLine(start, end, colour);
   }
 }
 
 void filledTriangleTex(CanvasTriangle points, Colour colour) {
+  // printf("%f\n", points.vertices[0].texturePoint.x);
+
   //First sort the veritces according to y value ASCENDING
   if (points.vertices[0].y > points.vertices[1].y) {
     swap(points.vertices[0], points.vertices[1]);
@@ -320,42 +341,50 @@ void filledTriangleTex(CanvasTriangle points, Colour colour) {
   //Split the triangle into two with flat bases
   CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y);
   //Determine the Texture point of this
-  midpoint.texturePoint = TexturePoint(top.x + (((mid.texturePoint.y - top.texturePoint.y) / (btm.texturePoint.y - top.texturePoint.y)) * (btm.texturePoint.x - top.texturePoint.x)), mid.texturePoint.y);
+  midpoint.texturePoint = TexturePoint(top.texturePoint.x + (((mid.texturePoint.y - top.texturePoint.y) / (btm.texturePoint.y - top.texturePoint.y)) * (btm.texturePoint.x - top.texturePoint.x)), mid.texturePoint.y);
 
   //Then fill these two triangles that are produced
-  // fillBottomFlatTriangle(top, mid, midpoint, colour);
+  fillBottomFlatTriangleTex(top, mid, midpoint, btm, colour);
   // fillTopFlatTriangle(mid, midpoint, btm, colour);
 
 }
 
-void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
-  //FOR POINTS
-  float invslope1 = (point2.x - point1.x) / (point2.y - point1.y);
-  float invslope2 = (point3.x - point1.x) / (point3.y - point1.y);
-  float curx1 = point1.x;
-  float curx2 = point1.x;
+void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, CanvasPoint btm, Colour colour) {
+  //TOP, MID, MIDPOINT
+  std::vector<float> startXs = interpolate(point2.x, point1.x, point2.y - point1.y);
+  std::vector<float> endXs = interpolate(point3.x, point1.x, point3.y - point1.y);
 
-  //FOR TEXTURES
-  float invslopeT1 = (point2.texturePoint.x - point1.texturePoint.x) / (point2.texturePoint.y - point1.texturePoint.y);
-  float invslopeT2 = (point3.texturePoint.x - point1.texturePoint.x) / (point3.texturePoint.y - point1.texturePoint.y);
-  float curTx1 = point1.texturePoint.x;
-  float curTx2 = point2.texturePoint.x;
+  std::vector<float> startTx = interpolate(point1.texturePoint.x, btm.texturePoint.x, point2.y - point1.y);
+  std::vector<float> endTx = interpolate(point1.texturePoint.x, point3.texturePoint.x, point2.y - point1.y);
 
-  for (int scanlineY = point1.y; scanlineY <= point2.y; scanlineY++) {
-    CanvasPoint start = CanvasPoint(curx1, scanlineY);
-    CanvasPoint end = CanvasPoint(curx2, scanlineY);
-    start.texturePoint = TexturePoint(curTx1, point1.texturePoint.y + scanlineY);
-    end.texturePoint = TexturePoint(curTx2, point1.texturePoint.y + scanlineY);
-    drawLineTex(start, end, colour);
-    curx1 += invslope1;
-    curx2 += invslope2;
+  for (float y = point1.y; y < point2.y; y+=1.0) {
+    float xStart = startXs.back();
+    startXs.pop_back();
+    float xEnd = endXs.back();
+    endXs.pop_back();
 
-    curTx1 += invslopeT1;
-    curTx2 += invslopeT2;
+    CanvasPoint start = CanvasPoint(xStart, y);
+    CanvasPoint end = CanvasPoint(xEnd, y);
+    drawLine(start, end, colour);
   }
 }
 
-void drawLineTex(CanvasPoint point1, CanvasPoint point2, Colour colour) {
+void fillTopFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
+  //MID, MIDPOINT, BTM
+  //Draw from bottom to each point along the flat top
+  for (int curX = point1.x; curX <= point2.x; curX++) {
+    CanvasPoint end = CanvasPoint(curX, point2.y);
+    //Figure out what the texture point is for the end points
+    //point3 will remain the same
+    float proportion = (curX - point1.x) / (point2.x - point1.x);
+    float newTx = point1.texturePoint.x + proportion * (point2.texturePoint.x - point1.texturePoint.x);
+    float newTy = point1.texturePoint.y + proportion * (point2.texturePoint.y - point1.texturePoint.y);
+    end.texturePoint = TexturePoint(newTx, newTy);
+    drawLineTex(point3, end);
+  }
+}
+
+void drawLineTex(CanvasPoint point1, CanvasPoint point2) {
   int xlen = point1.x - point2.x;
   int ylen = point1.y - point2.y;
   int len = sqrt((xlen * xlen) + (ylen * ylen));
@@ -372,7 +401,12 @@ void drawLineTex(CanvasPoint point1, CanvasPoint point2, Colour colour) {
     int y = ysteps.back();
     ysteps.pop_back();
 
-    Colour tex = texture[x*height + y];
+    int xT = xTsteps.back();
+    xTsteps.pop_back();
+    int yT = yTsteps.back();
+    yTsteps.pop_back();
+
+    Colour tex = texture[xT*height + yT];
 
     uint32_t colour32 = (255<<24) + (tex.red<<16) + (tex.green<<8) + tex.blue;
     window.setPixelColour(x, y, colour32);
