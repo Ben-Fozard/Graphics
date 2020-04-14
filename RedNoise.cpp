@@ -4,7 +4,9 @@
 #include <Utils.h>
 #include <glm/glm.hpp>
 #include <fstream>
+#include <sstream>
 #include <vector>
+#include <map>
 
 using namespace std;
 using namespace glm;
@@ -30,16 +32,127 @@ void filledTriangleTex(CanvasTriangle points, Colour colour);
 void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, CanvasPoint btm, Colour colour);
 void fillTopFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
 
-
 Colour texture[480*395]; //THIS SHOULD BE DONE PROGRAMMATICALLY
 int width = 0;
 int height = 0;
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
+//LOAD THE MATERIALS FOR AN OBJ
+std::map<string, Colour> readMtl(string filename) {
+  std::map<string, Colour> cMap;
+
+  std::ifstream ifs (filename, std::ifstream::in);
+  string line;
+  string gap = " ";
+
+  string curName;
+
+  while (getline(ifs, line)) {
+    size_t found = line.find(gap);
+
+    string type = line.substr(0, found);
+    string values = line.substr(found+1);
+    // puts(heightS.c_str());
+
+    if (type == "newmtl") { //NEW COLOUR
+      //Get the materials library
+      curName = values;
+      puts(curName.c_str());
+
+      //THEN LOAD PALLETES
+
+    }
+    else if (type == "Kd") { //HERE THE COLOUR IS SPECIFIED
+      stringstream ss(values);
+      float r, g, b;
+      ss >> r >> g >> b;
+
+      Colour newColour = Colour(255*r, 255*g, 255*b);
+      cMap[curName] = newColour;
+    }
+  }
+
+
+  return cMap;
+}
+
+//OBJ LOADER
+std::vector<ModelTriangle> load_obj(string filename) {
+  std::ifstream ifs (filename, std::ifstream::in);
+  string line;
+  string gap = " ";
+
+  vector<vec3> vertices;
+
+  vector<ModelTriangle> triangles;
+
+  vector<Colour> colours;
+  string materialLib;
+  std::map<string, Colour> cMap;
+  string curMtl;
+
+
+  while (getline(ifs, line)) {
+    size_t found = line.find(gap);
+
+    string type = line.substr(0, found);
+    string values = line.substr(found+1);
+    // puts(heightS.c_str());
+
+
+
+    //DEFAULT COLOUR SO WE CAN TEST VERTICES BEFORE DOING MATERIALS
+    if (type == "mtllib") {
+      //Get the materials library
+      materialLib = values;
+      puts(materialLib.c_str());
+
+      //THEN LOAD PALETTES
+      cMap = readMtl("cornell-box.mtl");
+    }
+    else if (type == "usemtl") { //We have changed what material we are using
+      curMtl = values;
+    }
+    else if (type == "v") {
+      stringstream ss(values);
+      float x, y, z;
+      ss >> x >> y >> z;
+      vec3 newV = vec3(x, y, z);
+      // cout << newV.x;
+      vertices.push_back(newV);
+    }
+    else if (type == "f") {
+      stringstream ss1(values);
+      int v1;
+      int v2 = 0; int v3 = 0;
+      ss1 >> v1;
+
+      // FIND THE NEXT VALUE
+      found = values.find(gap);
+      values = values.substr(found+1);
+      stringstream ss2(values);
+      ss2 >> v2;
+
+      // FIND THE NEXT VALUE
+      found = values.find(gap);
+      values = values.substr(found+1);
+      stringstream ss3(values);
+      ss3 >> v3;
+
+      // printf("%d, %d, %d\n", v1, v2, v3);
+
+      ModelTriangle triangle = ModelTriangle(vertices[v1-1], vertices[v2-1], vertices[v3-1], cMap[curMtl]);
+    }
+  }
+  return triangles;
+}
+
 int main(int argc, char* argv[])
 {
-  readImage();
+  // readImage();
+
+  vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
 
   SDL_Event event;
   // window = DrawingWindow(WIDTH, HEIGHT, false);
@@ -184,7 +297,7 @@ void draw()
   CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
   stroked(points, drawColour);
   //Now fill the triangle
-  filledTriangleTex(points, drawColour);
+  filledTriangle(points, drawColour);
 
 }
 
@@ -341,6 +454,7 @@ void filledTriangleTex(CanvasTriangle points, Colour colour) {
   //Split the triangle into two with flat bases
   CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y);
   //Determine the Texture point of this
+  //IS THIS RIGHT?????????????????
   midpoint.texturePoint = TexturePoint(top.texturePoint.x + (((mid.texturePoint.y - top.texturePoint.y) / (btm.texturePoint.y - top.texturePoint.y)) * (btm.texturePoint.x - top.texturePoint.x)), mid.texturePoint.y);
 
   //Then fill these two triangles that are produced
@@ -354,8 +468,11 @@ void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoi
   std::vector<float> startXs = interpolate(point2.x, point1.x, point2.y - point1.y);
   std::vector<float> endXs = interpolate(point3.x, point1.x, point3.y - point1.y);
 
-  std::vector<float> startTx = interpolate(point1.texturePoint.x, btm.texturePoint.x, point2.y - point1.y);
-  std::vector<float> endTx = interpolate(point1.texturePoint.x, point3.texturePoint.x, point2.y - point1.y);
+  std::vector<float> startTXs = interpolate(point2.texturePoint.x, point1.texturePoint.x, point2.y - point1.y);
+  std::vector<float> endTXs = interpolate(point3.texturePoint.x, point1.texturePoint.x, point3.y - point1.y);
+
+  std::vector<float> startTYs = interpolate(point2.texturePoint.y, point1.texturePoint.y, point2.y - point1.y);
+  std::vector<float> endTYs = interpolate(point3.texturePoint.y, point1.texturePoint.y, point3.y - point1.y);
 
   for (float y = point1.y; y < point2.y; y+=1.0) {
     float xStart = startXs.back();
@@ -363,9 +480,23 @@ void fillBottomFlatTriangleTex(CanvasPoint point1, CanvasPoint point2, CanvasPoi
     float xEnd = endXs.back();
     endXs.pop_back();
 
+    float xTStart = startTXs.back();
+    startTXs.pop_back();
+    float xTEnd = endTXs.back();
+    endTXs.pop_back();
+
+    float yTStart = startTYs.back();
+    startTYs.pop_back();
+    float yTEnd = endTYs.back();
+    endTYs.pop_back();
+
+
     CanvasPoint start = CanvasPoint(xStart, y);
     CanvasPoint end = CanvasPoint(xEnd, y);
-    drawLine(start, end, colour);
+
+    start.texturePoint = TexturePoint(xTStart, yTStart);
+    end.texturePoint = TexturePoint(xTEnd, yTEnd);
+    drawLineTex(start, end);
   }
 }
 
