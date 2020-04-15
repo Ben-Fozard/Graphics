@@ -14,9 +14,17 @@ using namespace glm;
 #define WIDTH 320
 #define HEIGHT 240
 
+struct Camera {
+  float focalLength;
+  vec3 position;
+  mat3 R;
+  vec3 rotation;
+  vec3 translation;
+};
+
 void readImage();
-void draw();
-void update();
+void draw(Camera camera);
+void update(Camera camera);
 void handleEvent(SDL_Event event);
 std::vector<float> interpolate(float from, float to, int numberOfValues);
 std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues);
@@ -37,6 +45,7 @@ int width = 0;
 int height = 0;
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
+vector<ModelTriangle> triangles ;
 
 //LOAD THE MATERIALS FOR AN OBJ
 std::map<string, Colour> readMtl(string filename) {
@@ -58,7 +67,7 @@ std::map<string, Colour> readMtl(string filename) {
     if (type == "newmtl") { //NEW COLOUR
       //Get the materials library
       curName = values;
-      puts(curName.c_str());
+      // puts(curName.c_str());
 
       //THEN LOAD PALLETES
 
@@ -106,7 +115,7 @@ std::vector<ModelTriangle> load_obj(string filename) {
     if (type == "mtllib") {
       //Get the materials library
       materialLib = values;
-      puts(materialLib.c_str());
+      // puts(materialLib.c_str());
 
       //THEN LOAD PALETTES
       cMap = readMtl("cornell-box.mtl");
@@ -143,6 +152,7 @@ std::vector<ModelTriangle> load_obj(string filename) {
       // printf("%d, %d, %d\n", v1, v2, v3);
 
       ModelTriangle triangle = ModelTriangle(vertices[v1-1], vertices[v2-1], vertices[v3-1], cMap[curMtl]);
+      triangles.push_back(triangle);
     }
   }
   return triangles;
@@ -150,9 +160,19 @@ std::vector<ModelTriangle> load_obj(string filename) {
 
 int main(int argc, char* argv[])
 {
+  //FOR TEXTURES
   // readImage();
 
-  vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
+  Camera camera = {
+    2,
+    vec3(0, 0, -3),
+    mat3(1),
+    vec3(0, 0, 0),
+    vec3(0, 0, 0)
+  };
+
+  // triangles = load_obj("cornell-box.obj");
+  // cout << triangles.back();
 
   SDL_Event event;
   // window = DrawingWindow(WIDTH, HEIGHT, false);
@@ -160,8 +180,8 @@ int main(int argc, char* argv[])
   {
     // We MUST poll for events - otherwise the window will freeze !
     if(window.pollForInputEvents(&event)) handleEvent(event);
-    update();
-    draw();
+    update(camera);
+    draw(camera);
     // Need to render the frame at the end, or nothing actually gets shown on the screen !
     window.renderFrame();
   }
@@ -233,7 +253,7 @@ void readImage() {
 
 }
 
-void draw()
+void draw(Camera camera)
 {
   window.clearPixels();
 
@@ -286,6 +306,7 @@ void draw()
 
   //Lab 2 TASK 5
   //Draw stroked triangle
+  /*
   Colour drawColour = Colour(255, 0, 0);
   CanvasPoint cp1 = CanvasPoint(160.f, 10.f);
   CanvasPoint cp2 = CanvasPoint(300.f, 230.f);
@@ -298,10 +319,45 @@ void draw()
   stroked(points, drawColour);
   //Now fill the triangle
   filledTriangle(points, drawColour);
+  */
 
+  //LAB 3 WIREFRAMES
+  triangles = load_obj("cornell-box.obj");
+  // cout << triangles.back();
+  // cout << triangles.size() << "\n";
+
+  for (int i = 0; i < int(triangles.size()); i++) {
+    ModelTriangle t = triangles.back();
+    //For the first canvas point
+    float xi = camera.focalLength * ((t.vertices[0].x - camera.position.x) / (t.vertices[0].z - camera.position.z));
+    //Now adapt the value to be relative to the center of the image plane
+    xi = xi + WIDTH/2;
+    float yi = camera.focalLength * ((t.vertices[0].y - camera.position.y) / (t.vertices[0].z - camera.position.z));
+    //Now adapt the value to be relative to the center of the image plane
+    yi = yi + HEIGHT/2;
+    CanvasPoint cp1 = CanvasPoint(xi, yi);
+    //For the second canvas point
+    xi = camera.focalLength * ((t.vertices[1].x - camera.position.x) / (t.vertices[1].z - camera.position.z));
+    xi = xi + WIDTH/2;
+    yi = camera.focalLength * ((t.vertices[1].y - camera.position.y) / (t.vertices[1].z - camera.position.z));
+    yi = yi + HEIGHT/2;
+    CanvasPoint cp2 = CanvasPoint(xi, yi);
+    //For the third canvas point
+    xi = camera.focalLength * ((t.vertices[2].x - camera.position.x) / (t.vertices[2].z - camera.position.z));
+    xi = xi + WIDTH/2;
+    yi = camera.focalLength * ((t.vertices[2].y - camera.position.y) / (t.vertices[2].z - camera.position.z));
+    yi = yi + HEIGHT/2;
+    CanvasPoint cp3 = CanvasPoint(xi, yi);
+
+    //THEN DRAW THE TRIANGLE
+    CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
+    stroked(points, t.colour); //COLOURS WORK FINE
+  //   // cout << t;
+    triangles.pop_back();
+  }
 }
 
-void update()
+void update(Camera camera)
 {
   // Function for performing animation (shifting artifacts or moving the camera)
 }
