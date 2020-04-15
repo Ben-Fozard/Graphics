@@ -157,9 +157,10 @@ int main(int argc, char* argv[])
   //FOR TEXTURES
   // readImage();
 
+  //STILL NEED TO EXPERIMENT WITH THESE VALUES
   Camera camera = {
-    1.5,
-    vec3(0, 0, -3)
+    3,
+    vec3(0, 0, 0)
   };
 
   vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
@@ -345,11 +346,12 @@ void draw(Camera camera)
     yi = yi + HEIGHT/2;
     CanvasPoint cp3 = CanvasPoint(xi, yi);
 
-    cout << i << "\n";
+    // cout << i << "\n";
 
     //THEN DRAW THE TRIANGLE
     CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
-    stroked(points, t.colour);
+    // stroked(points, t.colour);
+    filledTriangle(points, t.colour);
 
     triangles.pop_back();
   }
