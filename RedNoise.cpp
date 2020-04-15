@@ -20,6 +20,7 @@ struct Camera{
 };
 
 void readImage();
+void writeImage(string filename);
 void draw(Camera camera);
 void update();
 void handleEvent(SDL_Event event);
@@ -163,7 +164,9 @@ int main(int argc, char* argv[])
     vec3(0, 0, 0)
   };
 
-  vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
+  writeImage("output.ppm");
+
+  // vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
 
   SDL_Event event;
   // window = DrawingWindow(WIDTH, HEIGHT, false);
@@ -240,8 +243,43 @@ void readImage() {
   }
 
   printf("Finished reading in file\n");
+}
 
+void writeImage(string filename) {
+  ofstream myfile;
+  myfile.open(filename);
 
+  //File type
+  myfile << "P6\n";
+  //Whitespace
+  myfile << "\n";
+  //Dimensions
+  myfile << WIDTH << " " << HEIGHT << "\n";
+  //MaxVal
+  myfile << 255 << "\n"; //We will say that this is our maximal value as we are using just 1 byte per colour channel
+
+  //Then the actual pixel values
+  for (int i = 0; i < HEIGHT; i++) { //FOR EACH ROW
+    for (int j = 0; j < WIDTH; j++) { //FOR EACH PIXEL
+      //WRITE IN THE COLOURS FOR THE PIXEL
+      // char red;
+      //
+      // char green;
+      //
+      // char blue;
+      uint32_t pixColour = window.getPixelColour(j, i);
+
+      // uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
+      // window.setPixelColour(x, y, colour32);
+
+      static unsigned char red = (pixColour >> (8 * 2)) & 0xff;
+      static unsigned char green = (pixColour >> (8 * 1)) & 0xff;
+      static unsigned char blue = (pixColour >> (8 * 0)) & 0xff;
+      myfile << red << green << blue;
+    }
+    // myfile << "\n";
+  }
+  printf("Finished writing to file\n");
 }
 
 void draw(Camera camera)
@@ -312,6 +350,15 @@ void draw(Camera camera)
   filledTriangle(points, drawColour);
   */
 
+  //LAB 3 DEPTH BUFFER
+  // float depthBuf[HEIGHT][WIDTH] = {};
+  // for (int i = 0; i < HEIGHT; i++) {
+  //   for (int j = 0; j < WIDTH; j++) {
+  //     depthBuf[i][j] = std::numeric_limits<float>::infinity();
+  //   }
+  // }
+  // cout << depthBuf[0][0] << "\n";
+
   //LAB 3 WIREFRAMES
   vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
   // cout << triangles.size() << "\n";
@@ -355,6 +402,9 @@ void draw(Camera camera)
 
     triangles.pop_back();
   }
+
+  //Write current screen to file
+  // writeImage("output.ppm");
 
 }
 
