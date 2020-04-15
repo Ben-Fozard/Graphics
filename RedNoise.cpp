@@ -295,14 +295,14 @@ void draw(Camera camera)
   */
 
   //Lab 2 DRAW FILLED TRIANGLE
-  /*
+
   Colour drawColour = Colour(255, 0, 0);
   CanvasPoint cp1 = CanvasPoint(50.f, 10.f);
   CanvasPoint cp2 = CanvasPoint(20.f, 120.f);
   CanvasPoint cp3 = CanvasPoint(80.f, 70.f);
   CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
   filledTriangle(points, drawColour);
-  */
+
 
   //Lab 2 TASK 5
   //Draw stroked triangle
@@ -322,39 +322,40 @@ void draw(Camera camera)
   */
 
   //LAB 3 WIREFRAMES
+  /*
   triangles = load_obj("cornell-box.obj");
   // cout << triangles.back();
   // cout << triangles.size() << "\n";
 
-  for (int i = 0; i < int(triangles.size()); i++) {
+  for (uint32_t i = 0; i < triangles.size(); i++) {
     ModelTriangle t = triangles.back();
     //For the first canvas point
     float xi = camera.focalLength * ((t.vertices[0].x - camera.position.x) / (t.vertices[0].z - camera.position.z));
     //Now adapt the value to be relative to the center of the image plane
-    xi = xi + WIDTH/2;
+    xi = xi + WIDTH/2.f;
     float yi = camera.focalLength * ((t.vertices[0].y - camera.position.y) / (t.vertices[0].z - camera.position.z));
     //Now adapt the value to be relative to the center of the image plane
-    yi = yi + HEIGHT/2;
+    yi = yi + HEIGHT/2.f;
     CanvasPoint cp1 = CanvasPoint(xi, yi);
     //For the second canvas point
     xi = camera.focalLength * ((t.vertices[1].x - camera.position.x) / (t.vertices[1].z - camera.position.z));
-    xi = xi + WIDTH/2;
+    xi = xi + WIDTH/2.f;
     yi = camera.focalLength * ((t.vertices[1].y - camera.position.y) / (t.vertices[1].z - camera.position.z));
-    yi = yi + HEIGHT/2;
+    yi = yi + HEIGHT/2.f;
     CanvasPoint cp2 = CanvasPoint(xi, yi);
     //For the third canvas point
     xi = camera.focalLength * ((t.vertices[2].x - camera.position.x) / (t.vertices[2].z - camera.position.z));
-    xi = xi + WIDTH/2;
+    xi = xi + WIDTH/2.f;
     yi = camera.focalLength * ((t.vertices[2].y - camera.position.y) / (t.vertices[2].z - camera.position.z));
-    yi = yi + HEIGHT/2;
+    yi = yi + HEIGHT/2.f;
     CanvasPoint cp3 = CanvasPoint(xi, yi);
 
     //THEN DRAW THE TRIANGLE
     CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
     stroked(points, t.colour); //COLOURS WORK FINE
-  //   // cout << t;
     triangles.pop_back();
   }
+  */
 }
 
 void update(Camera camera)
