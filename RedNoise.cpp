@@ -14,8 +14,13 @@ using namespace glm;
 #define WIDTH 320
 #define HEIGHT 240
 
+struct Camera{
+  float focalLength;
+  vec3 position;
+};
+
 void readImage();
-void draw();
+void draw(Camera camera);
 void update();
 void handleEvent(SDL_Event event);
 std::vector<float> interpolate(float from, float to, int numberOfValues);
@@ -58,7 +63,7 @@ std::map<string, Colour> readMtl(string filename) {
     if (type == "newmtl") { //NEW COLOUR
       //Get the materials library
       curName = values;
-      puts(curName.c_str());
+      // puts(curName.c_str());
 
       //THEN LOAD PALLETES
 
@@ -106,7 +111,7 @@ std::vector<ModelTriangle> load_obj(string filename) {
     if (type == "mtllib") {
       //Get the materials library
       materialLib = values;
-      puts(materialLib.c_str());
+      // puts(materialLib.c_str());
 
       //THEN LOAD PALETTES
       cMap = readMtl("cornell-box.mtl");
@@ -140,9 +145,8 @@ std::vector<ModelTriangle> load_obj(string filename) {
       stringstream ss3(values);
       ss3 >> v3;
 
-      // printf("%d, %d, %d\n", v1, v2, v3);
-
       ModelTriangle triangle = ModelTriangle(vertices[v1-1], vertices[v2-1], vertices[v3-1], cMap[curMtl]);
+      triangles.push_back(triangle);
     }
   }
   return triangles;
@@ -150,7 +154,13 @@ std::vector<ModelTriangle> load_obj(string filename) {
 
 int main(int argc, char* argv[])
 {
+  //FOR TEXTURES
   // readImage();
+
+  Camera camera = {
+    1.5,
+    vec3(0, 0, -3)
+  };
 
   vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
 
@@ -161,7 +171,7 @@ int main(int argc, char* argv[])
     // We MUST poll for events - otherwise the window will freeze !
     if(window.pollForInputEvents(&event)) handleEvent(event);
     update();
-    draw();
+    draw(camera);
     // Need to render the frame at the end, or nothing actually gets shown on the screen !
     window.renderFrame();
   }
@@ -233,7 +243,7 @@ void readImage() {
 
 }
 
-void draw()
+void draw(Camera camera)
 {
   window.clearPixels();
 
@@ -285,6 +295,7 @@ void draw()
   */
 
   //Lab 2 TASK 5
+  /*
   //Draw stroked triangle
   Colour drawColour = Colour(255, 0, 0);
   CanvasPoint cp1 = CanvasPoint(160.f, 10.f);
@@ -298,6 +309,50 @@ void draw()
   stroked(points, drawColour);
   //Now fill the triangle
   filledTriangle(points, drawColour);
+  */
+
+  //LAB 3 WIREFRAMES
+  vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
+  // cout << triangles.size() << "\n";
+  int len = int(triangles.size()); //GOT TO DECLARE HERE OTHERWISE WE POP THE LIST WHILST IT'S SIZE IS BEING USED AS A LOOP CONDITION
+  float xi = 0.f;
+  float yi = 0.f;
+
+  for (int i = 0; i < len; i++) {
+    ModelTriangle t = triangles.back();
+    //For the first canvas point
+    xi = camera.focalLength * ((t.vertices[0].x - camera.position.x) / (t.vertices[0].z - camera.position.z));
+    //Now we center the value relative to the screen
+    xi = xi + WIDTH/2;
+    yi = camera.focalLength * ((t.vertices[0].y - camera.position.y) / (t.vertices[0].z - camera.position.z));
+    //Now we center the value relative to the screen
+    yi = yi + HEIGHT/2;
+    CanvasPoint cp1 = CanvasPoint(xi, yi);
+    //For the second canvas point
+    xi = camera.focalLength * ((t.vertices[1].x - camera.position.x) / (t.vertices[1].z - camera.position.z));
+    //Now we center the value relative to the screen
+    xi = xi + WIDTH/2;
+    yi = camera.focalLength * ((t.vertices[1].y - camera.position.y) / (t.vertices[1].z - camera.position.z));
+    //Now we center the value relative to the screen
+    yi = yi + HEIGHT/2;
+    CanvasPoint cp2 = CanvasPoint(xi, yi);
+    //For the third canvas point
+    xi = camera.focalLength * ((t.vertices[2].x - camera.position.x) / (t.vertices[2].z - camera.position.z));
+    //Now we center the value relative to the screen
+    xi = xi + WIDTH/2;
+    yi = camera.focalLength * ((t.vertices[2].y - camera.position.y) / (t.vertices[2].z - camera.position.z));
+    //Now we center the value relative to the screen
+    yi = yi + HEIGHT/2;
+    CanvasPoint cp3 = CanvasPoint(xi, yi);
+
+    cout << i << "\n";
+
+    //THEN DRAW THE TRIANGLE
+    CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
+    stroked(points, t.colour);
+
+    triangles.pop_back();
+  }
 
 }
 
@@ -403,8 +458,12 @@ void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint 
   //TOP, MID, MIDPOINT
   std::vector<float> startXs = interpolate(point2.x, point1.x, point2.y - point1.y);
   std::vector<float> endXs = interpolate(point3.x, point1.x, point3.y - point1.y);
+  // cout << point3.y - point1.y << " vs " << int(endXs.size()) << "\n";
+  int len = int(endXs.size());
+  // cout << len << "\n";
 
-  for (float y = point1.y; y < point2.y; y+=1.0) {
+  float y = point1.y;
+  for (int i = 0; i < len; i ++) {
     float xStart = startXs.back();
     startXs.pop_back();
     float xEnd = endXs.back();
@@ -413,6 +472,8 @@ void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint 
     CanvasPoint start = CanvasPoint(xStart, y);
     CanvasPoint end = CanvasPoint(xEnd, y);
     drawLine(start, end, colour);
+    y+=1.0f;
+    // cout << y << "\n";
   }
 }
 
@@ -420,8 +481,10 @@ void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint poi
   //MID, MIDPOINT, BTM
   std::vector<float> startXs = interpolate(point3.x, point1.x, point3.y - point1.y);
   std::vector<float> endXs = interpolate(point3.x, point2.x, point3.y - point1.y);
+  int len = int(endXs.size());
 
-  for (float y = point1.y; y < point3.y; y+=1.0) {
+  float y = point1.y;
+  for (int i = 0; i < len; i++) {
     float xStart = startXs.back();
     startXs.pop_back();
     float xEnd = endXs.back();
@@ -430,6 +493,7 @@ void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint poi
     CanvasPoint start = CanvasPoint(xStart, y);
     CanvasPoint end = CanvasPoint(xEnd, y);
     drawLine(start, end, colour);
+    y+=1.0f;
   }
 }
 
