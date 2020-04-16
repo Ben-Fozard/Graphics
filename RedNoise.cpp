@@ -29,6 +29,7 @@ std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues);
 void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour);
 void stroked(CanvasTriangle points, Colour colour);
 void filledTriangle(CanvasTriangle points, Colour colour);
+
 void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
 void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour);
 
@@ -43,6 +44,7 @@ int width = 0;
 int height = 0;
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
+float depthBuf[HEIGHT][WIDTH] = {};
 
 //LOAD THE MATERIALS FOR AN OBJ
 std::map<string, Colour> readMtl(string filename) {
@@ -277,6 +279,12 @@ void draw(Camera camera)
 {
   window.clearPixels();
 
+  for (int i = 0; i < HEIGHT; i++) {
+    for (int j = 0; j < WIDTH; j++) {
+      depthBuf[i][j] = std::numeric_limits<float>::infinity();
+    }
+  }
+
   //Lab 1 COLOUR GRADIENT
   /*
   std::vector<vec3> right = newInterpolate(vec3(0,255,0), vec3(0,0,255), window.height);
@@ -315,14 +323,24 @@ void draw(Camera camera)
   */
 
   //Lab 2 DRAW FILLED TRIANGLE
-  /*
+/*
   Colour drawColour = Colour(255, 0, 0);
-  CanvasPoint cp1 = CanvasPoint(50.f, 10.f);
-  CanvasPoint cp2 = CanvasPoint(20.f, 120.f);
-  CanvasPoint cp3 = CanvasPoint(80.f, 70.f);
+  CanvasPoint cp1 = CanvasPoint(160.f, 10.f, 10.f);
+  CanvasPoint cp2 = CanvasPoint(300.f, 230.f, 10.f);
+  CanvasPoint cp3 = CanvasPoint(10.f, 150.f, 10.f);
   CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
+  // stroked(points, drawColour);
   filledTriangle(points, drawColour);
-  */
+
+  //HAVE AN OVERLAPPING TRIANGLE WHICH SHOULD BE BEHIND
+  drawColour = Colour(0, 255, 0);
+  cp1 = CanvasPoint(250.f, 10.f, 30.f);
+  cp2 = CanvasPoint(150.f, 240.f, 30.f);
+  cp3 = CanvasPoint(20.f, 120.f, 30.f);
+  points = CanvasTriangle(cp1, cp2, cp3);
+  filledTriangle(points, drawColour);
+*/
+
 
   //Lab 2 TASK 5
   /*
@@ -351,40 +369,34 @@ void draw(Camera camera)
   // cout << depthBuf[0][0] << "\n";
 
   //LAB 3 WIREFRAMES
+
   vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
   // cout << triangles.size() << "\n";
   int len = int(triangles.size()); //GOT TO DECLARE HERE OTHERWISE WE POP THE LIST WHILST IT'S SIZE IS BEING USED AS A LOOP CONDITION
-  float xi = 0.f;
-  float yi = 0.f;
+  // float xi = 0.f;
+  // float yi = 0.f;
 
   for (int i = 0; i < len; i++) {
     ModelTriangle t = triangles.back();
-    //For the first canvas point
-    xi = camera.focalLength * ((t.vertices[0].x - camera.position.x) / (t.vertices[0].z - camera.position.z));
-    //Now we center the value relative to the screen
-    xi = xi + WIDTH/2;
-    yi = camera.focalLength * ((t.vertices[0].y - camera.position.y) / (t.vertices[0].z - camera.position.z));
-    //Now we center the value relative to the screen
-    yi = yi + HEIGHT/2;
-    CanvasPoint cp1 = CanvasPoint(xi, yi);
-    //For the second canvas point
-    xi = camera.focalLength * ((t.vertices[1].x - camera.position.x) / (t.vertices[1].z - camera.position.z));
-    //Now we center the value relative to the screen
-    xi = xi + WIDTH/2;
-    yi = camera.focalLength * ((t.vertices[1].y - camera.position.y) / (t.vertices[1].z - camera.position.z));
-    //Now we center the value relative to the screen
-    yi = yi + HEIGHT/2;
-    CanvasPoint cp2 = CanvasPoint(xi, yi);
-    //For the third canvas point
-    xi = camera.focalLength * ((t.vertices[2].x - camera.position.x) / (t.vertices[2].z - camera.position.z));
-    //Now we center the value relative to the screen
-    xi = xi + WIDTH/2;
-    yi = camera.focalLength * ((t.vertices[2].y - camera.position.y) / (t.vertices[2].z - camera.position.z));
-    //Now we center the value relative to the screen
-    yi = yi + HEIGHT/2;
-    CanvasPoint cp3 = CanvasPoint(xi, yi);
 
-    // cout << i << "\n";
+    //GETTING DEPTH
+    vec3 vertex1 = t.vertices[0] - camera.position;
+    vec3 vertex2 = t.vertices[1] - camera.position;
+    vec3 vertex3 = t.vertices[2] - camera.position;
+
+    //GETTING PROJECTION ONTO IMAGE PLANE
+    //For the first canvas point
+    vertex1.x = (camera.focalLength * (vertex1.x / vertex1.z)) + WIDTH/2;
+    vertex1.y = (camera.focalLength * (vertex1.y / vertex1.z)) + HEIGHT/2;
+    CanvasPoint cp1 = CanvasPoint(vertex1.x, vertex1.y, vertex1.z);
+    //For the second canvas point
+    vertex2.x = (camera.focalLength * (vertex2.x / vertex2.z)) + WIDTH/2;
+    vertex2.y = (camera.focalLength * (vertex2.y / vertex2.z)) + HEIGHT/2;
+    CanvasPoint cp2 = CanvasPoint(vertex2.x, vertex2.y, vertex2.z);
+    //For the third canvas point
+    vertex3.x = (camera.focalLength * (vertex3.x / vertex3.z)) + WIDTH/2;
+    vertex3.y = (camera.focalLength * (vertex3.y / vertex3.z)) + HEIGHT/2;
+    CanvasPoint cp3 = CanvasPoint(vertex3.x, vertex3.y, vertex3.z);
 
     //THEN DRAW THE TRIANGLE
     CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
@@ -394,8 +406,9 @@ void draw(Camera camera)
     triangles.pop_back();
   }
 
+
   //Write current screen to file
-  writeImage("output.ppm");
+  // writeImage("output.ppm");
 
 }
 
@@ -435,9 +448,9 @@ std::vector<float> interpolate(float from, float to, int numberOfValues) {
 std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues) {
   std::vector<vec3> results= {};
 
-  float stepX = (to.x - from.x)/(numberOfValues - 1);
-  float stepY = (to.y - from.y)/(numberOfValues - 1);
-  float stepZ = (to.z - from.z)/(numberOfValues - 1);
+  float stepX = (to.x - from.x)/float(glm::max(numberOfValues - 1, 1));
+  float stepY = (to.y - from.y)/float(glm::max(numberOfValues - 1, 1));
+  float stepZ = (to.z - from.z)/float(glm::max(numberOfValues - 1, 1));
 
   for (int i = 0; i < numberOfValues; i++){
     vec3 v = vec3(from.x + (i*stepX), from.y + (i*stepY), from.z + (i*stepZ));
@@ -452,18 +465,40 @@ void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
   int ylen = point1.y - point2.y;
   int len = sqrt((xlen * xlen) + (ylen * ylen));
 
-  std::vector<float> xsteps = interpolate(point1.x, point2.x, len);
-  std::vector<float> ysteps = interpolate(point1.y, point2.y, len);
+  // std::vector<float> xsteps = interpolate(point1.x, point2.x, len);
+  // std::vector<float> ysteps = interpolate(point1.y, point2.y, len);
+  //
+  // for (int i = 0; i < len; i++) {
+  //   int x = xsteps.back();
+  //   xsteps.pop_back();
+  //   int y = ysteps.back();
+  //   ysteps.pop_back();
+  //
+  //   uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
+  //   window.setPixelColour(x, y, colour32);
+  // }
+
+  vec3 vertex1 = vec3(point1.x, point1.y, point1.depth);
+  vec3 vertex2 = vec3(point2.x, point2.y, point2.depth);
+
+  std::vector<vec3> pixels = newInterpolate(vertex1, vertex2, len);
 
   for (int i = 0; i < len; i++) {
-    int x = xsteps.back();
-    xsteps.pop_back();
-    int y = ysteps.back();
-    ysteps.pop_back();
+    vec3 pixel = pixels.back();
+    pixels.pop_back();
 
-    uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
-    window.setPixelColour(x, y, colour32);
+    float invZ = 1 / pixel.z;
+
+    float curDepth = depthBuf[int(pixel.y)][int(pixel.x)];
+    if ((curDepth == numeric_limits<float>::infinity()) || (curDepth < invZ)) {
+      // cout << curDepth << "\n";
+      uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
+      window.setPixelColour(pixel.x, pixel.y, colour32);
+
+      depthBuf[int(pixel.y)][int(pixel.x)] = invZ;
+    }
   }
+
 }
 
 void stroked(CanvasTriangle points, Colour colour) {
@@ -489,7 +524,8 @@ void filledTriangle(CanvasTriangle points, Colour colour) {
   CanvasPoint btm = points.vertices[2];
 
   //Split the triangle into two with flat bases
-  CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y);
+  //DEPTH OF midpoint
+  CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y, mid.depth);
 
   //Then fill these two triangles that are produced
   fillBottomFlatTriangle(top, mid, midpoint, colour);
@@ -499,44 +535,51 @@ void filledTriangle(CanvasTriangle points, Colour colour) {
 
 void fillBottomFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
   //TOP, MID, MIDPOINT
-  std::vector<float> startXs = interpolate(point2.x, point1.x, point2.y - point1.y);
-  std::vector<float> endXs = interpolate(point3.x, point1.x, point3.y - point1.y);
-  // cout << point3.y - point1.y << " vs " << int(endXs.size()) << "\n";
-  int len = int(endXs.size());
-  // cout << len << "\n";
+  vec3 vertex1 = vec3(point1.x, point1.y, float(point1.depth));
+  vec3 vertex2 = vec3(point2.x, point2.y, float(point2.depth));
+  vec3 vertex3 = vec3(point3.x, point3.y, float(point3.depth));
 
-  float y = point1.y;
-  for (int i = 0; i < len; i ++) {
-    float xStart = startXs.back();
-    startXs.pop_back();
-    float xEnd = endXs.back();
-    endXs.pop_back();
+  std::vector<vec3> start = newInterpolate(vertex2, vertex1, point2.y - point1.y);
+  std::vector<vec3> end = newInterpolate(vertex3, vertex1, point3.y - point1.y);
 
-    CanvasPoint start = CanvasPoint(xStart, y);
-    CanvasPoint end = CanvasPoint(xEnd, y);
-    drawLine(start, end, colour);
-    y+=1.0f;
-    // cout << y << "\n";
+  int len = int(start.size());
+
+  for (int i = 0; i < len; i++) {
+    vec3 ls = start.back();
+    start.pop_back();
+    vec3 le = end.back();
+    end.pop_back();
+
+    CanvasPoint lineStart = CanvasPoint(ls.x, ls.y, ls.z);
+    CanvasPoint lineEnd = CanvasPoint(le.x, le.y, le.z);
+
+    drawLine(lineStart, lineEnd, colour);
   }
+
+
 }
 
 void fillTopFlatTriangle(CanvasPoint point1, CanvasPoint point2, CanvasPoint point3, Colour colour) {
   //MID, MIDPOINT, BTM
-  std::vector<float> startXs = interpolate(point3.x, point1.x, point3.y - point1.y);
-  std::vector<float> endXs = interpolate(point3.x, point2.x, point3.y - point1.y);
-  int len = int(endXs.size());
+  vec3 vertex1 = vec3(point1.x, point1.y, float(point1.depth));
+  vec3 vertex2 = vec3(point2.x, point2.y, float(point2.depth));
+  vec3 vertex3 = vec3(point3.x, point3.y, float(point3.depth));
 
-  float y = point1.y;
+  std::vector<vec3> start = newInterpolate(vertex3, vertex1, point3.y - point1.y);
+  std::vector<vec3> end = newInterpolate(vertex3, vertex2, point3.y - point2.y);
+
+  int len = int(start.size());
+
   for (int i = 0; i < len; i++) {
-    float xStart = startXs.back();
-    startXs.pop_back();
-    float xEnd = endXs.back();
-    endXs.pop_back();
+    vec3 ls = start.back();
+    start.pop_back();
+    vec3 le = end.back();
+    end.pop_back();
 
-    CanvasPoint start = CanvasPoint(xStart, y);
-    CanvasPoint end = CanvasPoint(xEnd, y);
-    drawLine(start, end, colour);
-    y+=1.0f;
+    CanvasPoint lineStart = CanvasPoint(ls.x, ls.y, ls.z);
+    CanvasPoint lineEnd = CanvasPoint(le.x, le.y, le.z);
+
+    drawLine(lineStart, lineEnd, colour);
   }
 }
 
