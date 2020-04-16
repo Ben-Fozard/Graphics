@@ -17,11 +17,19 @@ using namespace glm;
 struct Camera{
   float focalLength;
   vec3 position;
+  float movementSpeed;
+};
+
+//STILL NEED TO EXPERIMENT WITH THESE VALUES
+Camera camera = {
+  3,
+  vec3(0, 0, 0),
+  0.001
 };
 
 void readImage();
 void writeImage(string filename);
-void draw(Camera camera);
+void draw();
 void update();
 void handleEvent(SDL_Event event);
 std::vector<float> interpolate(float from, float to, int numberOfValues);
@@ -160,12 +168,6 @@ int main(int argc, char* argv[])
   //FOR TEXTURES
   // readImage();
 
-  //STILL NEED TO EXPERIMENT WITH THESE VALUES
-  Camera camera = {
-    3,
-    vec3(0, 0, 0)
-  };
-
   // writeImage("output.ppm");
 
   // vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
@@ -177,7 +179,7 @@ int main(int argc, char* argv[])
     // We MUST poll for events - otherwise the window will freeze !
     if(window.pollForInputEvents(&event)) handleEvent(event);
     update();
-    draw(camera);
+    draw();
     // Need to render the frame at the end, or nothing actually gets shown on the screen !
     window.renderFrame();
   }
@@ -275,7 +277,7 @@ void writeImage(string filename) {
   printf("Finished writing to file\n");
 }
 
-void draw(Camera camera)
+void draw()
 {
   window.clearPixels();
 
@@ -419,11 +421,41 @@ void update()
 
 void handleEvent(SDL_Event event)
 {
+  //Calculate frame rate
+  static int t = SDL_GetTicks();
+  int t2 = SDL_GetTicks();
+  float dt = float(t2 - t);
+  t = t2;
+
   if(event.type == SDL_KEYDOWN) {
     if(event.key.keysym.sym == SDLK_LEFT) cout << "LEFT" << endl;
     else if(event.key.keysym.sym == SDLK_RIGHT) cout << "RIGHT" << endl;
     else if(event.key.keysym.sym == SDLK_UP) cout << "UP" << endl;
     else if(event.key.keysym.sym == SDLK_DOWN) cout << "DOWN" << endl;
+    else if(event.key.keysym.sym == SDLK_w) {
+      cout << "W" << endl;
+      camera.position.z += camera.movementSpeed * dt;
+    }
+    else if(event.key.keysym.sym == SDLK_s) {
+      cout << "S" << endl;
+      camera.position.z -= camera.movementSpeed * dt;
+    }
+    else if(event.key.keysym.sym == SDLK_a) {
+      cout << "A" << endl;
+      camera.position.x -= camera.movementSpeed * dt;
+    }
+    else if(event.key.keysym.sym == SDLK_d) {
+      cout << "D" << endl;
+      camera.position.x += camera.movementSpeed * dt;
+    }
+    else if(event.key.keysym.sym == SDLK_q) {
+      cout << "Q" << endl;
+      camera.position.y -= camera.movementSpeed * dt;
+    }
+    else if(event.key.keysym.sym == SDLK_e) {
+      cout << "E" << endl;
+      camera.position.y += camera.movementSpeed * dt;
+    }
   }
   else if(event.type == SDL_MOUSEBUTTONDOWN) cout << "MOUSE CLICKED" << endl;
 }
@@ -488,6 +520,14 @@ void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
     pixels.pop_back();
 
     float invZ = 1 / pixel.z;
+
+    //BOUNDS CHECKING
+    if ((pixel.x < 0) || (WIDTH - 1 < pixel.x)) {
+      continue;
+    }
+    if ((pixel.y < 0) || (HEIGHT - 1 < pixel.y)) {
+      continue;
+    }
 
     float curDepth = depthBuf[int(pixel.y)][int(pixel.x)];
     if ((curDepth == numeric_limits<float>::infinity()) || (curDepth < invZ)) {
