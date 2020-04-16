@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <iomanip>
 
 using namespace std;
 using namespace glm;
@@ -26,6 +27,8 @@ Camera camera = {
   vec3(0, 2.5, 6),
   0.001
 };
+
+int outfile = 1;
 
 void readImage();
 void writeImage(string filename);
@@ -407,9 +410,17 @@ void draw()
     triangles.pop_back();
   }
 
-
   //Write current screen to file
-  // writeImage("output.ppm");
+  std::stringstream ss;
+  ss << std::setw(5) << std::setfill('0') << outfile << ".ppm";
+  std::string s = ss.str();
+  cout << s << endl;
+  
+  //UNCOMMENT THIS LINE TO SAVE ALL FRAMES
+  // writeImage(s);
+
+  //Increment outfile name
+  outfile++;
 
 }
 
@@ -496,19 +507,6 @@ void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
   int ylen = point1.y - point2.y;
   int len = sqrt((xlen * xlen) + (ylen * ylen));
 
-  // std::vector<float> xsteps = interpolate(point1.x, point2.x, len);
-  // std::vector<float> ysteps = interpolate(point1.y, point2.y, len);
-  //
-  // for (int i = 0; i < len; i++) {
-  //   int x = xsteps.back();
-  //   xsteps.pop_back();
-  //   int y = ysteps.back();
-  //   ysteps.pop_back();
-  //
-  //   uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
-  //   window.setPixelColour(x, y, colour32);
-  // }
-
   vec3 vertex1 = vec3(point1.x, point1.y, point1.depth);
   vec3 vertex2 = vec3(point2.x, point2.y, point2.depth);
 
@@ -531,7 +529,6 @@ void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
     float curDepth = depthBuf[int(pixel.y)][int(pixel.x)];
     // WE FLIPPED THIS HERE BECAUSE THE CORNELL BOX HAS NEGATIVE COORDIANTES
     if ((curDepth == numeric_limits<float>::infinity()) || (curDepth > invZ)) {
-      // cout << curDepth << "\n";
       uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
       window.setPixelColour(pixel.x, pixel.y, colour32);
 
