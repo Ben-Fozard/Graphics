@@ -22,8 +22,8 @@ struct Camera{
 
 //STILL NEED TO EXPERIMENT WITH THESE VALUES
 Camera camera = {
-  3,
-  vec3(0, 0, 0),
+  200,
+  vec3(0, 2.5, 6),
   0.001
 };
 
