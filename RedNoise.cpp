@@ -371,7 +371,6 @@ void draw()
   // cout << depthBuf[0][0] << "\n";
 
   //LAB 3 WIREFRAMES
-
   vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
   // cout << triangles.size() << "\n";
   int len = int(triangles.size()); //GOT TO DECLARE HERE OTHERWISE WE POP THE LIST WHILST IT'S SIZE IS BEING USED AS A LOOP CONDITION
@@ -402,8 +401,8 @@ void draw()
 
     //THEN DRAW THE TRIANGLE
     CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
-    // stroked(points, t.colour);
-    filledTriangle(points, t.colour);
+    stroked(points, t.colour);
+    // filledTriangle(points, t.colour);
 
     triangles.pop_back();
   }
