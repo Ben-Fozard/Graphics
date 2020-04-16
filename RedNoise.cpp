@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
     vec3(0, 0, 0)
   };
 
-  writeImage("output.ppm");
+  // writeImage("output.ppm");
 
   // vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
 
@@ -262,22 +262,13 @@ void writeImage(string filename) {
   for (int i = 0; i < HEIGHT; i++) { //FOR EACH ROW
     for (int j = 0; j < WIDTH; j++) { //FOR EACH PIXEL
       //WRITE IN THE COLOURS FOR THE PIXEL
-      // char red;
-      //
-      // char green;
-      //
-      // char blue;
       uint32_t pixColour = window.getPixelColour(j, i);
-
-      // uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
-      // window.setPixelColour(x, y, colour32);
-
-      static unsigned char red = (pixColour >> (8 * 2)) & 0xff;
-      static unsigned char green = (pixColour >> (8 * 1)) & 0xff;
-      static unsigned char blue = (pixColour >> (8 * 0)) & 0xff;
+      //Get each byte for the colour channels
+      unsigned char red = (pixColour >> (8 * 2)) & 0xff;
+      unsigned char green = (pixColour >> (8 * 1)) & 0xff;
+      unsigned char blue = (pixColour >> (8 * 0)) & 0xff;
       myfile << red << green << blue;
     }
-    // myfile << "\n";
   }
   printf("Finished writing to file\n");
 }
@@ -404,7 +395,7 @@ void draw(Camera camera)
   }
 
   //Write current screen to file
-  // writeImage("output.ppm");
+  writeImage("output.ppm");
 
 }
 
