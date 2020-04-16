@@ -401,8 +401,8 @@ void draw()
 
     //THEN DRAW THE TRIANGLE
     CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
-    stroked(points, t.colour);
-    // filledTriangle(points, t.colour);
+    // stroked(points, t.colour);
+    filledTriangle(points, t.colour);
 
     triangles.pop_back();
   }
@@ -529,7 +529,8 @@ void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
     }
 
     float curDepth = depthBuf[int(pixel.y)][int(pixel.x)];
-    if ((curDepth == numeric_limits<float>::infinity()) || (curDepth < invZ)) {
+    // WE FLIPPED THIS HERE BECAUSE THE CORNELL BOX HAS NEGATIVE COORDIANTES
+    if ((curDepth == numeric_limits<float>::infinity()) || (curDepth > invZ)) {
       // cout << curDepth << "\n";
       uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
       window.setPixelColour(pixel.x, pixel.y, colour32);
