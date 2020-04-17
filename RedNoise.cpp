@@ -30,7 +30,7 @@ Camera camera = {
 
 int outfile = 1;
 
-void readImage();
+void readImage(string filename);
 void writeImage(string filename);
 void draw();
 void update();
@@ -90,6 +90,10 @@ std::map<string, Colour> readMtl(string filename) {
       Colour newColour = Colour(255*r, 255*g, 255*b);
       cMap[curName] = newColour;
     }
+    else if (type == "map_Kd") { //Load texture map
+      //Load texture ppm
+      readImage(filename);
+    }
   }
 
 
@@ -97,14 +101,18 @@ std::map<string, Colour> readMtl(string filename) {
 }
 
 //OBJ LOADER
+//MAYBE THIS HOULD RETURN CANVAS TRIANGLE???????????????????????
 std::vector<ModelTriangle> load_obj(string filename) {
   std::ifstream ifs (filename, std::ifstream::in);
   string line;
   string gap = " ";
+  string seperator = "/";
 
   vector<vec3> vertices;
 
   vector<ModelTriangle> triangles;
+
+  vector<TexturePoint> tPoints;
 
   vector<Colour> colours;
   string materialLib;
@@ -125,10 +133,8 @@ std::vector<ModelTriangle> load_obj(string filename) {
     if (type == "mtllib") {
       //Get the materials library
       materialLib = values;
-      // puts(materialLib.c_str());
 
-      //THEN LOAD PALETTES
-      cMap = readMtl("cornell-box.mtl");
+      cMap = readMtl(materialLib);
     }
     else if (type == "usemtl") { //We have changed what material we are using
       curMtl = values;
@@ -138,29 +144,81 @@ std::vector<ModelTriangle> load_obj(string filename) {
       float x, y, z;
       ss >> x >> y >> z;
       vec3 newV = vec3(x, y, z);
-      // cout << newV.x;
       vertices.push_back(newV);
     }
     else if (type == "f") {
-      stringstream ss1(values);
-      int v1;
-      int v2 = 0; int v3 = 0;
+      //THIS NEEDS TO BE ADAPTED TO TAKE INTO ACCOUNT v/vt
+      //GET THE TEXTURE POINT ASSOCIATED ITH THE VERTEX
+      int v1, v2, v3;
+      int t1, t2, t3;
+
+      //GET THE VERTEX TO BE USED
+      found = values.find(seperator);
+      string vertex = values.substr(0, found);
+      stringstream ss1(vertex);
       ss1 >> v1;
+      CanvasPoint cp1 = CanvasPoint(vertices[v1-1].x, vertices[v1-1].y, vertices[v1-1].z);
+
+
+      //GET THE TEXTURE POINT TO USE
+      values = values.substr(found+1);
+      found = values.find(gap);
+      if (found != 0) { //If there is texture point associated with the vertex
+        string vt = values.substr(0, found);
+        stringstream tt1(vt);
+        tt1 >> t1;
+        // cp1.texturePoint = tPoints[t1 - 1];
+      }
+      // values = values.substr(found + 1);
 
       // FIND THE NEXT VALUE
-      found = values.find(gap);
-      values = values.substr(found+1);
-      stringstream ss2(values);
+      // OF THE FORM v/vt
+      found = values.find(seperator);
+      vertex = values.substr(0, found);
+      stringstream ss2(vertex);
       ss2 >> v2;
+      CanvasPoint cp2 = CanvasPoint(vertices[v2-1].x, vertices[v2-1].y, vertices[v2-1].z);
+
+      values = values.substr(found+1);
+      found = values.find(gap);
+      if (found != 0) { //If there is texture point associated with the vertex
+        string vt = values.substr(0, found);
+        stringstream tt2(vt);
+        tt2 >> t2;
+        // cp2.texturePoint = tPoints[t2 - 1];
+      }
 
       // FIND THE NEXT VALUE
-      found = values.find(gap);
-      values = values.substr(found+1);
-      stringstream ss3(values);
+      found = values.find(seperator);
+      vertex = values.substr(0, found);
+      stringstream ss3(vertex);
       ss3 >> v3;
+      CanvasPoint cp3 = CanvasPoint(vertices[v3-1].x, vertices[v3-1].y, vertices[v3-1].z);
+
+      values = values.substr(found+1);
+      found = values.find(gap);
+      if (found != 0) { //If there is texture point associated with the vertex
+        string vt = values.substr(0, found);
+        stringstream tt3(vt);
+        tt3 >> t3;
+        // cp3.texturePoint = tPoints[t3 - 1];
+      }
+
+      //SHOULD ADD A CHECK AND THEN DEFINE THE COLOUR
+      CanvasTriangle cTriangle = CanvasTriangle(cp1, cp2, cp3);
 
       ModelTriangle triangle = ModelTriangle(vertices[v1-1], vertices[v2-1], vertices[v3-1], cMap[curMtl]);
       triangles.push_back(triangle);
+    }
+    else if (type == "vt") {
+      stringstream ss(values);
+      float x, y;
+      ss >> x >> y;
+      TexturePoint tP = TexturePoint(x, y);
+      tPoints.push_back(tP);
+      //Access element at a point using :
+      // TexturePoint & element = tPoints[x];
+      // OR use at()
     }
   }
   return triangles;
@@ -169,7 +227,7 @@ std::vector<ModelTriangle> load_obj(string filename) {
 int main(int argc, char* argv[])
 {
   //FOR TEXTURES
-  // readImage();
+  readImage("texture.ppm");
 
   // writeImage("output.ppm");
 
@@ -189,8 +247,8 @@ int main(int argc, char* argv[])
 
 }
 
-void readImage() {
-  std::ifstream ifs ("texture.ppm", std::ifstream::in);
+void readImage(string filename) {
+  std::ifstream ifs (filename, std::ifstream::in);
   string line;
 
   //FILE TYPE
@@ -348,7 +406,7 @@ void draw()
 
 
   //Lab 2 TASK 5
-  /*
+/*
   //Draw stroked triangle
   Colour drawColour = Colour(255, 0, 0);
   CanvasPoint cp1 = CanvasPoint(160.f, 10.f);
@@ -359,10 +417,10 @@ void draw()
   cp2.texturePoint = TexturePoint(395, 380);
   cp3.texturePoint = TexturePoint(65, 330);
   CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
-  stroked(points, drawColour);
+  // stroked(points, drawColour);
   //Now fill the triangle
-  filledTriangle(points, drawColour);
-  */
+  // filledTriangleTex(points, drawColour);
+*/
 
   //LAB 3 DEPTH BUFFER
   // float depthBuf[HEIGHT][WIDTH] = {};
@@ -373,7 +431,11 @@ void draw()
   // }
   // cout << depthBuf[0][0] << "\n";
 
+  //FOR THE HACKSPACE LOGO
+  // vector<ModelTriangle> triangles = load_obj("logo.obj");
+
   //LAB 3 WIREFRAMES
+
   vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
   // cout << triangles.size() << "\n";
   int len = int(triangles.size()); //GOT TO DECLARE HERE OTHERWISE WE POP THE LIST WHILST IT'S SIZE IS BEING USED AS A LOOP CONDITION
@@ -410,17 +472,19 @@ void draw()
     triangles.pop_back();
   }
 
+  // vector<ModelTriangle> logo = load_obj("logo.obj");
+
   //Write current screen to file
-  std::stringstream ss;
-  ss << std::setw(5) << std::setfill('0') << outfile << ".ppm";
-  std::string s = ss.str();
-  cout << s << endl;
-  
+  // std::stringstream ss;
+  // ss << std::setw(5) << std::setfill('0') << outfile << ".ppm";
+  // std::string s = ss.str();
+  // cout << s << endl;
+
   //UNCOMMENT THIS LINE TO SAVE ALL FRAMES
   // writeImage(s);
 
   //Increment outfile name
-  outfile++;
+  // outfile++;
 
 }
 
@@ -503,36 +567,36 @@ std::vector<vec3> newInterpolate(vec3 from, vec3 to, int numberOfValues) {
 }
 
 void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
-  int xlen = point1.x - point2.x;
-  int ylen = point1.y - point2.y;
-  int len = sqrt((xlen * xlen) + (ylen * ylen));
+  float xDiff = point2.x - point1.x;
+  float yDiff = point2.y - point1.y;
+  float zDiff = point2.depth - point1.depth;
+  float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+  float xStepSize = xDiff/numberOfSteps;
+  float yStepSize = yDiff/numberOfSteps;
+  float zStepSize = zDiff/numberOfSteps;
+  for (float i=0.0; i<numberOfSteps; i++) {
+    float x = point1.x + (xStepSize*i);
+    float y = point1.y + (yStepSize*i);
+    float z = point1.depth + (zStepSize*i);
 
-  vec3 vertex1 = vec3(point1.x, point1.y, point1.depth);
-  vec3 vertex2 = vec3(point2.x, point2.y, point2.depth);
-
-  std::vector<vec3> pixels = newInterpolate(vertex1, vertex2, len);
-
-  for (int i = 0; i < len; i++) {
-    vec3 pixel = pixels.back();
-    pixels.pop_back();
-
-    float invZ = 1 / pixel.z;
+    float invZ = 1 / z;
+    //SHOULD PROBABLY CHECK THAT THE DEPTH IS NOT NEGATIVE
 
     //BOUNDS CHECKING
-    if ((pixel.x < 0) || (WIDTH - 1 < pixel.x)) {
+    if ((x < 0) || (WIDTH - 1 < x)) {
       continue;
     }
-    if ((pixel.y < 0) || (HEIGHT - 1 < pixel.y)) {
+    if ((y < 0) || (HEIGHT - 1 < y)) {
       continue;
     }
 
-    float curDepth = depthBuf[int(pixel.y)][int(pixel.x)];
-    // WE FLIPPED THIS HERE BECAUSE THE CORNELL BOX HAS NEGATIVE COORDIANTES
+    float curDepth = depthBuf[int(y)][int(x)];
+    //WE FLIPPED THE SIGN OF THE COMPARISON HERE BECAUSE THE COORDINATES FOR THE CORNELL BOX ARE NEGATIVE
     if ((curDepth == numeric_limits<float>::infinity()) || (curDepth > invZ)) {
       uint32_t colour32 = (255<<24) + (colour.red<<16) + (colour.green<<8) + colour.blue;
-      window.setPixelColour(pixel.x, pixel.y, colour32);
+      window.setPixelColour(x, y, colour32);
 
-      depthBuf[int(pixel.y)][int(pixel.x)] = invZ;
+      depthBuf[int(y)][int(x)] = invZ;
     }
   }
 
@@ -562,7 +626,10 @@ void filledTriangle(CanvasTriangle points, Colour colour) {
 
   //Split the triangle into two with flat bases
   //DEPTH OF midpoint
-  CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y, mid.depth);
+  float proportion = (mid.y - top.y) / (btm.y - top.y);
+  float midpointDepth = (proportion * (btm.depth - top.depth)) + top.depth;
+
+  CanvasPoint midpoint = CanvasPoint(top.x + (((mid.y - top.y) / (btm.y - top.y)) * (btm.x - top.x)), mid.y, midpointDepth);
 
   //Then fill these two triangles that are produced
   fillBottomFlatTriangle(top, mid, midpoint, colour);
