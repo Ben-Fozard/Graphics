@@ -452,15 +452,15 @@ void draw()
 
     //GETTING PROJECTION ONTO IMAGE PLANE
     //For the first canvas point
-    vertex1.x = (camera.focalLength * (vertex1.x / vertex1.z)) + WIDTH/2;
+    vertex1.x = - (camera.focalLength * (vertex1.x / vertex1.z)) + WIDTH/2;
     vertex1.y = (camera.focalLength * (vertex1.y / vertex1.z)) + HEIGHT/2;
     CanvasPoint cp1 = CanvasPoint(vertex1.x, vertex1.y, vertex1.z);
     //For the second canvas point
-    vertex2.x = (camera.focalLength * (vertex2.x / vertex2.z)) + WIDTH/2;
+    vertex2.x = - (camera.focalLength * (vertex2.x / vertex2.z)) + WIDTH/2;
     vertex2.y = (camera.focalLength * (vertex2.y / vertex2.z)) + HEIGHT/2;
     CanvasPoint cp2 = CanvasPoint(vertex2.x, vertex2.y, vertex2.z);
     //For the third canvas point
-    vertex3.x = (camera.focalLength * (vertex3.x / vertex3.z)) + WIDTH/2;
+    vertex3.x = - (camera.focalLength * (vertex3.x / vertex3.z)) + WIDTH/2;
     vertex3.y = (camera.focalLength * (vertex3.y / vertex3.z)) + HEIGHT/2;
     CanvasPoint cp3 = CanvasPoint(vertex3.x, vertex3.y, vertex3.z);
 
@@ -580,7 +580,7 @@ void drawLine(CanvasPoint point1, CanvasPoint point2, Colour colour) {
     float z = point1.depth + (zStepSize*i);
 
     float invZ = 1 / z;
-    //SHOULD PROBABLY CHECK THAT THE DEPTH IS NOT NEGATIVE
+    //SHOULD PROBABLY CHECK THAT THE DEPTH IS NOT NEGATI
 
     //BOUNDS CHECKING
     if ((x < 0) || (WIDTH - 1 < x)) {
