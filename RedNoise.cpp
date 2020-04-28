@@ -12,8 +12,8 @@
 using namespace std;
 using namespace glm;
 
-#define WIDTH 320
-#define HEIGHT 240
+#define WIDTH 640
+#define HEIGHT 480
 
 struct Camera{
   float focalLength;
@@ -56,6 +56,8 @@ int height = 0;
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 float depthBuf[HEIGHT][WIDTH] = {};
+
+vector<ModelTriangle> trianglesGlobal;
 
 //LOAD THE MATERIALS FOR AN OBJ
 std::map<string, Colour> readMtl(string filename) {
@@ -227,7 +229,9 @@ std::vector<ModelTriangle> load_obj(string filename) {
 int main(int argc, char* argv[])
 {
   //FOR TEXTURES
-  readImage("texture.ppm");
+  // readImage("texture.ppm");
+
+  trianglesGlobal = load_obj("cornell-box.obj");
 
   // writeImage("output.ppm");
 
@@ -307,7 +311,7 @@ void readImage(string filename) {
     }
   }
 
-  printf("Finished reading in file\n");
+  // printf("Finished reading in file\n");
 }
 
 void writeImage(string filename) {
@@ -335,7 +339,7 @@ void writeImage(string filename) {
       myfile << red << green << blue;
     }
   }
-  printf("Finished writing to file\n");
+  // printf("Finished writing to file\n");
 }
 
 void draw()
@@ -436,7 +440,8 @@ void draw()
 
   //LAB 3 WIREFRAMES
 
-  vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
+  // vector<ModelTriangle> triangles = load_obj("cornell-box.obj");
+  std::vector<ModelTriangle> triangles = trianglesGlobal;
   // cout << triangles.size() << "\n";
   int len = int(triangles.size()); //GOT TO DECLARE HERE OTHERWISE WE POP THE LIST WHILST IT'S SIZE IS BEING USED AS A LOOP CONDITION
   // float xi = 0.f;
@@ -466,8 +471,8 @@ void draw()
 
     //THEN DRAW THE TRIANGLE
     CanvasTriangle points = CanvasTriangle(cp1, cp2, cp3);
-    // stroked(points, t.colour);
-    filledTriangle(points, t.colour);
+    stroked(points, t.colour);
+    // filledTriangle(points, t.colour);
 
     triangles.pop_back();
   }
@@ -475,16 +480,16 @@ void draw()
   // vector<ModelTriangle> logo = load_obj("logo.obj");
 
   //Write current screen to file
-  // std::stringstream ss;
-  // ss << std::setw(5) << std::setfill('0') << outfile << ".ppm";
-  // std::string s = ss.str();
+  std::stringstream ss;
+  ss << std::setw(5) << std::setfill('0') << outfile << ".ppm";
+  std::string s = ss.str();
   // cout << s << endl;
 
   //UNCOMMENT THIS LINE TO SAVE ALL FRAMES
   // writeImage(s);
 
   //Increment outfile name
-  // outfile++;
+  outfile++;
 
 }
 
@@ -507,27 +512,27 @@ void handleEvent(SDL_Event event)
     else if(event.key.keysym.sym == SDLK_UP) cout << "UP" << endl;
     else if(event.key.keysym.sym == SDLK_DOWN) cout << "DOWN" << endl;
     else if(event.key.keysym.sym == SDLK_w) {
-      cout << "W" << endl;
+      // cout << "W" << endl;
       camera.position.z += camera.movementSpeed * dt;
     }
     else if(event.key.keysym.sym == SDLK_s) {
-      cout << "S" << endl;
+      // cout << "S" << endl;
       camera.position.z -= camera.movementSpeed * dt;
     }
     else if(event.key.keysym.sym == SDLK_a) {
-      cout << "A" << endl;
+      // cout << "A" << endl;
       camera.position.x -= camera.movementSpeed * dt;
     }
     else if(event.key.keysym.sym == SDLK_d) {
-      cout << "D" << endl;
+      // cout << "D" << endl;
       camera.position.x += camera.movementSpeed * dt;
     }
     else if(event.key.keysym.sym == SDLK_q) {
-      cout << "Q" << endl;
+      // cout << "Q" << endl;
       camera.position.y -= camera.movementSpeed * dt;
     }
     else if(event.key.keysym.sym == SDLK_e) {
-      cout << "E" << endl;
+      // cout << "E" << endl;
       camera.position.y += camera.movementSpeed * dt;
     }
   }
